@@ -50,7 +50,7 @@ def email_user(email, name, calories, time):
 
 def main():  
     # Test Emailing
-    email_user("chiggyokwor@gmail.com", "Chisom", "80", 100)
+    email_user("okwor@gmail.com", "Chisom", "80", 100)
 
 if __name__ == "__main__":
     main()
