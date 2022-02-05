@@ -7,6 +7,8 @@ import os
 from AudioCommSys import text_to_speech
 import threading
 
+from camera import VideoCamera
+
 class utilities():
     def __init__(self) -> None:
         pass    
@@ -15,8 +17,9 @@ class utilities():
         seconds = 3
         img = cv2.imread(example)
         img = cv2.resize(img, (980, 550))
-        cv2.imshow("Exercise Illustration", img)  
-        cv2.waitKey(1)
+
+        # cv2.imshow("Exercise Illustration", img)  
+        # cv2.waitKey(1)
         
         instruction = "Up next is " + exercise + " IN!"
 
@@ -26,15 +29,20 @@ class utilities():
         while seconds > 0:
             img = cv2.imread(example)
             img = cv2.resize(img, (980, 550))
+            print("in here1")
 
             time.sleep(1)
             speaker_thread = threading.Thread(target=text_to_speech, args=(str(int(seconds))), kwargs={})
             speaker_thread.start()
             cv2.putText(img, exercise + " in: " + str(int(seconds)) , (350, 50), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 5)    
-            cv2.imshow("Exercise Illustration", img)  
+           
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
+            
+            # cv2.imshow("Exercise Illustration", img)  
             seconds -= 1
-            cv2.waitKey(1)
-        cv2.destroyAllWindows()
+            # cv2.waitKey(1)
+        # cv2.destroyAllWindows()
 
     def repitition_counter(self, per, count, direction):
         if (per == 100 and direction == 0):
@@ -44,6 +52,7 @@ class utilities():
             count += 0.5
             direction = 0
             if int(count) != 0:
+                print("here")
                 speaker_thread = threading.Thread(target=text_to_speech, args=(str(int(count))), kwargs={})
                 speaker_thread.start()
         return {"count": count, "direction":  direction}
@@ -73,10 +82,11 @@ class simulate_warmup():
         self.reps = reps
         self.difficulty_level = difficulty_level
         self.calories_burned = calories_burned
+        print("ccc")
 
     def skip(self):
         utilities().illustrate_exercise("TrainerImages/skip_illustration.jpeg", "Warm Up")
-        cap = cv2.VideoCapture("TrainerData/gym_day_skip.mov")
+        cap = cv2.VideoCapture("TrainerData/gym_day_skip.mov") 
         detector = pm.posture_detector()
         count = 0
         direction = 0
@@ -87,6 +97,7 @@ class simulate_warmup():
             success, img = cap.read()
             img = detector.find_person(img, False)  
             landmark_list = detector.find_landmarks(img, False)
+            print("here skip 4")
 
             if len(landmark_list) != 0:
                 left_arm_angle = detector.find_angle(img, 11, 13, 15)
@@ -109,14 +120,17 @@ class simulate_warmup():
                 utilities().draw_performance_bar(img, per, bar, color, count)
             
             utilities().display_rep_count(img, count, total_reps)
-            cv2.imshow("Skipping", img)
-            cv2.waitKey(1)
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
+
+            # cv2.imshow("Skipping", img)
+            # cv2.waitKey(1)
         time_elapsed = int(time.process_time() - start)
 
         # Calorie calculator: Duration (in minutes)*(MET*3.5*weight in kg)/200
         calories_burned = int((time_elapsed/60) * ((8.0 * 3.5 * 64 )/50))
 
-        return {"calories": calories_burned, "time_elapsed": time_elapsed}
+        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
 
 class simulate_target_exercies():
@@ -135,6 +149,7 @@ class simulate_target_exercies():
 
         while count < total_reps:
             success, img = cap.read()
+            print("here")
             img = detector.find_person(img, False)    
             landmark_list = detector.find_landmarks(img, False)
 
@@ -155,14 +170,18 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
-            cv2.imshow("Push Ups", img)
-            cv2.waitKey(1)
+
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
+           
+            # cv2.imshow("Push Ups", img)
+            # cv2.waitKey(1)
             if count == (self.reps * self.difficulty_level):
                 break
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed/60) * ((4.0 * 3.5 * 64 )/200)
 
-        return {"calories": calories_burned, "time_elapsed": time_elapsed}
+        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
     def bicep_curls(self):
         utilities().illustrate_exercise("TrainerImages/bicep_curls_illustration.jpeg", "BICEP CURLS")
@@ -194,12 +213,16 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
-            cv2.imshow("Image", img)
-            cv2.waitKey(1)
+            
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
+
+            # cv2.imshow("Image", img)
+            # cv2.waitKey(1)
 
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed/60) * ((4.0 * 3.5 * 64 )/200)
-        return {"calories": calories_burned, "time_elapsed": time_elapsed}
+        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
     def mountain_climbers(self):
         utilities().illustrate_exercise("TrainerImages/mountain_climber_illustraion.jpeg", "MOUNTAIN CLIMBERS")
@@ -237,12 +260,15 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
-            cv2.imshow("Mountain Climbers", img)
-            cv2.waitKey(1)
+
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
+            # cv2.imshow("Mountain Climbers", img)
+            # cv2.waitKey(1)
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed/60) * ((4.0 * 3.5 * 64 )/200)
 
-        return {"calories": calories_burned, "time_elapsed": time_elapsed}
+        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
     def squats(self):
         utilities().illustrate_exercise("TrainerImages/squats_illustration.jpeg", "SQUATS")
@@ -276,11 +302,15 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
-            cv2.imshow("Squats", img)
-            cv2.waitKey(1)
+
+            ret, jpeg = cv2.imencode('.jpg', img)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
+            
+            # cv2.imshow("Squats", img)
+            # cv2.waitKey(1)
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed/60) * ((4.0 * 3.5 * 64 )/200)
-        return {"calories": calories_burned, "time_elapsed": time_elapsed}
+        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
 class start_workout_session():
     def __init__(self, difficulty_level=1):
@@ -291,7 +321,9 @@ class start_workout_session():
         while seconds >= 0:
             img = cv2.imread(congrats_img)
             img = cv2.resize(img, (980, 550))
-            cv2.imshow("Image", img)  
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + img+ b'\r\n\r\n')
+
+            # cv2.imshow("Image", img)  
             time.sleep(1)
             seconds -= 1
             cv2.waitKey(1)
@@ -305,6 +337,7 @@ class start_workout_session():
         return {"calories":  round(total_calories), "time_elapsed": time_elapsed}
 
     def complete_path(self):
+        print("abc")
         warm_ups = simulate_warmup(self.difficulty_level)
         target_exercises = simulate_target_exercies(self.difficulty_level)
 
@@ -314,14 +347,41 @@ class start_workout_session():
         bicep_curls_performance = target_exercises.bicep_curls()
         pushup_performance = target_exercises.push_ups()
         
-        overall_performance = [skipping_performance, squats_performance, bicep_curls_performance,  mc_performance, pushup_performance]
+        # overall_performance = [skipping_performance, squats_performance, bicep_curls_performance,  mc_performance, pushup_performance]
 
-        return  self.calculate_performance(overall_performance)
+        for i in skipping_performance:
+            yield(i)
+
+        for i in squats_performance:
+            yield(i)
+
+        for i in mc_performance:
+            yield(i)
+
+        for i in  bicep_curls_performance:
+            yield(i)       
+
+        for i in pushup_performance:
+            yield(i)
+            
+        # print(skipping_performance)
+
+        # return  self.calculate_performance(overall_performance)
+        
+        # print("here cp")
+        # warm_ups.skip()
+        # print("xx")
+        # skipping_performance = warm_ups.skip()
+
+        # simulate_target_exercies.mountain_climbers()
+        # simulate_target_exercies.bicep_curls()
+        # simulate_target_exercies.push_ups()
+        
+
 
 def main():  
-    session = start_workout_session()
-    performance = session.complete_path()
-    print(performance)
+    start_workout_session().complete_path()
+
 
 if __name__ == "__main__":
     main()
