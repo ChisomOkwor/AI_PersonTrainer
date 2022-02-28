@@ -38,7 +38,7 @@ class posture_detector():
         return self.landmark_list
 
     # Given any three points/co-ordinates, it gives us an angle(joint)
-    def find_angle(self, img, p1, p2, p3, draw=True):
+    def find_angle(self, img, p1, p2, p3, draw = True):
         # Get the landmarks
         x1, y1 = self.landmark_list[p1][1:]
         x2, y2 = self.landmark_list[p2][1:]

@@ -7,6 +7,8 @@ import os
 from AudioCommSys import text_to_speech
 import threading
 
+import face_detection as face_det
+
 from camera import VideoCamera
 
 class utilities():
@@ -72,6 +74,12 @@ class utilities():
             color = (0, 255, 255)
         return color
 
+    def face_foward_instruction(self, img, isFacingFoward):
+        if isFacingFoward:
+            cv2.putText(img,  "Facing Foward", (600, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 20)  
+        else:
+            cv2.putText(img,  "Not Facing Foward", (600, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 20)  
+
     def draw_performance_bar(self, img, per, bar, color, count):
         cv2.rectangle(img, (1600, 100), (1675, 650), color, 3)
         cv2.rectangle(img, (1600, int(bar)), (1675, 650), color, cv2.FILLED)
@@ -82,11 +90,10 @@ class simulate_warmup():
         self.reps = reps
         self.difficulty_level = difficulty_level
         self.calories_burned = calories_burned
-        print("ccc")
 
     def skip(self):
         utilities().illustrate_exercise("TrainerImages/skip_illustration.jpeg", "Warm Up")
-        cap = cv2.VideoCapture("TrainerData/gym_day_skip.mov") 
+        cap = cv2.VideoCapture("TrainerData/facing_back.mp4") 
         detector = pm.posture_detector()
         count = 0
         direction = 0
@@ -94,12 +101,15 @@ class simulate_warmup():
         total_reps = self.reps * self.difficulty_level * 3
 
         while count < total_reps:
+
             success, img = cap.read()
+            is_person_facing_foward = face_det.is_person_facing_front(img)
+            
             img = detector.find_person(img, False)  
             landmark_list = detector.find_landmarks(img, False)
-            print("here skip 4")
 
             if len(landmark_list) != 0:
+                is_facing_foward = True
                 left_arm_angle = detector.find_angle(img, 11, 13, 15)
                 right_arm_angle = detector.find_angle(img, 12, 14, 16)
 
@@ -120,6 +130,7 @@ class simulate_warmup():
                 utilities().draw_performance_bar(img, per, bar, color, count)
             
             utilities().display_rep_count(img, count, total_reps)
+            utilities().face_foward_instruction(img, is_person_facing_foward)
             ret, jpeg = cv2.imencode('.jpg', img)
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
 
@@ -149,7 +160,7 @@ class simulate_target_exercies():
 
         while count < total_reps:
             success, img = cap.read()
-            print("here")
+            is_person_facing_foward = face_det.is_person_facing_front(img)
             img = detector.find_person(img, False)    
             landmark_list = detector.find_landmarks(img, False)
 
@@ -170,6 +181,8 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
+            utilities().face_foward_instruction(img, is_person_facing_foward)
+
 
             ret, jpeg = cv2.imencode('.jpg', img)
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
@@ -194,6 +207,7 @@ class simulate_target_exercies():
 
         while count < total_reps:
             success, img = cap.read()
+            is_person_facing_foward =  face_det.is_person_facing_front(img)
             img = detector.find_person(img, False)
             landmark_list = detector.find_landmarks(img, False)
 
@@ -213,6 +227,8 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
+            utilities().face_foward_instruction(img, is_person_facing_foward)
+
             
             ret, jpeg = cv2.imencode('.jpg', img)
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
@@ -236,6 +252,7 @@ class simulate_target_exercies():
 
         while count < total_reps:
             success, img = cap.read()
+            is_person_facing_foward =  face_det.is_person_facing_front(img)
             img = detector.find_person(img, False)    
             landmark_list = detector.find_landmarks(img, False)
 
@@ -260,6 +277,8 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
+            utilities().face_foward_instruction(img, is_person_facing_foward)
+
 
             ret, jpeg = cv2.imencode('.jpg', img)
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
@@ -282,6 +301,7 @@ class simulate_target_exercies():
 
         while count < total_reps:
             success, img = cap.read()
+            is_person_facing_foward = face_det.is_person_facing_front(img)
             img = detector.find_person(img, False)    
             landmark_list = detector.find_landmarks(img, False)
 
@@ -302,6 +322,8 @@ class simulate_target_exercies():
                 utilities().draw_performance_bar(img, per, bar, color, count)
 
             utilities().display_rep_count(img, count, total_reps)
+            utilities().face_foward_instruction(img, is_person_facing_foward)
+
 
             ret, jpeg = cv2.imencode('.jpg', img)
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes()+ b'\r\n\r\n')
@@ -337,7 +359,6 @@ class start_workout_session():
         return {"calories":  round(total_calories), "time_elapsed": time_elapsed}
 
     def complete_path(self):
-        print("abc")
         warm_ups = simulate_warmup(self.difficulty_level)
         target_exercises = simulate_target_exercies(self.difficulty_level)
 
