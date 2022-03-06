@@ -1,8 +1,15 @@
+from hashlib import sha3_384
 import cv2
 import enum
 import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
+import time
+
+  
+# importing os module  
+import os
+  
 
 import inspect
 
@@ -172,7 +179,40 @@ def get_direction_of_person():
     cap.release()
 
 
-def is_person_facing_front(image):
+# Position of camera is directyly by the side
+def is_in_right_direction(img,  shoulder_x1,shoulder_x2, waist_x1):
+    # Cropped Image
+    if waist_x1 > shoulder_x1:
+        return False
+    
+    return True
+
+def is_person_facing_front(img, shoulder_x1, shoulder_y1,  shoulder_x2, shoulder_y2):
+    # Cropped Image
+    if shoulder_x1 > shoulder_x2:
+        return False
+    
+    image = img[0:shoulder_y1, shoulder_x1:shoulder_x2]
+
+    # Image directory
+    directory = os.getcwd()
+
+    print("Before saving image:")  
+    
+    # Filename
+    filename = 'savedImage.jpg'
+    
+    # Using cv2.imwrite() method
+    # Saving the image
+    cv2.imwrite(filename, image)
+    
+    # List files and directories  
+    # in 'C:/Users / Rajnish / Desktop / GeeksforGeeks'  
+    print("After saving image:")  
+    print(os.listdir(directory))
+    print('Successfully saved')
+
+    
     with mp_face_detection.FaceDetection(
        min_detection_confidence=0.5) as face_detection:
         # Convert the BGR image to RGB and process it with MediaPipe Face Detection.
@@ -224,17 +264,20 @@ def is_person_facing_front(image):
 
             if left_ear_x_axis < nose_x_axis:
                 print("TOO TO THE LEFT")
-                cv2.imshow('MediaPipe Face Detection', cv2.flip(image, 1))
+                cv2.imshow("Image", image)
                 return False
 
-            elif right_ear_x_axis > nose_x_axis:
+            if right_ear_x_axis > nose_x_axis:
                 print("TOO TO THE RIGHT")
-                cv2.imshow('MediaPipe Face Detection', cv2.flip(image, 1))
+                cv2.imshow("Image", image)
                 return False
+
             else:
                 print("FACING FOWARD")
-                cv2.imshow('MediaPipe Face Detection', cv2.flip(image, 1))
+                cv2.imshow("Image", image)
                 return True
+
+            
 
         
 

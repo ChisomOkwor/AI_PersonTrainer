@@ -68,12 +68,12 @@ class posture_detector():
 
 
 def main():
-    cap = cv2.VideoCapture('PoseVideos/bicep_curls_1.mp4')
+    cap = cv2.VideoCapture('TrainerData/facing_back.mp4')
     detector = posture_detector()
     while True:
         success, img = cap.read()
         img = detector.find_person(img)
-        landmark_list = detector.find_landmarks(img, draw=False)
+        landmark_list = detector.find_landmarks(img, draw=True)
         print(landmark_list)
         if len(landmark_list) != 0:
             print(landmark_list[14])
