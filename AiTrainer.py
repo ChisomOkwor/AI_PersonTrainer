@@ -1,22 +1,45 @@
+from crypt import methods
 import ExercisesModule as trainer
 import EmailingSystem as email_sys
 import DatabaseSys as db_sys
 import AudioCommSys as audio_sys
 
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request
 from camera import VideoCamera
 
 app= Flask(__name__, template_folder='template')
 
-@app.route('/')
+
+
+user_first_name = ""
+difficulty_level = ""
+age = ""
+weight = ""
+gender = ""
+
+
+@app.route('/trainer',  methods=['GET', 'POST'])
 def index():
-    return render_template("/index.html")
+    global difficulty_level
+    global age
+    global weight
+    global gender
+
+    user_first_name = "Chisom"
+    difficulty_level = request.form['gridRadiosDifficulty']
+    age = request.form['gridRadiosAge']
+    weight = request.form['numberInputWeight']
+    gender = request.form['gridRadiosGender']
+
+    print(user_first_name, difficulty_level, age, weight, gender)
+    return render_template("/index.html", user_first_name = "Chisom", difficulty_level = request.form['gridRadiosDifficulty'])
 
 
-@app.route('/configure')
-def configure():
-    return render_template("/configure.html")
+@app.route('/', methods=['GET', 'POST'])
+def landing():
+    return render_template("/landing.html")
 
+# For real world.
 def gen_camera(camera):
     while(True):
         frame = camera.get_frame()
@@ -25,21 +48,25 @@ def gen_camera(camera):
 @app.route('/video_feed_camera')
 def video_feed_camera():
     return Response( gen_camera(VideoCamera()) , mimetype='multipart/x-mixed-replace; boundary=frame')
+#  -------
 
-
+# For Test
 def gen():
     while(True):
-        # frame = camera.get_frame()
-        for i in trainer.start_workout_session(1).complete_path():
+        difficulty_level_map =  {"Easy": 1, "Intermediate": 2, "Hard": 3}
+        level = difficulty_level_map[difficulty_level]
+        print(level)
+        for i in trainer.start_workout_session(level).complete_path():
             yield i
         # yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
     
-@app.route('/video_feed')
+@app.route('/video-feed',  methods=['GET', 'POST'])
 def video_feed():
-    return Response(  gen() , mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response( gen() , mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+# -----------
 # def main():
 #     audio_sys.text_to_speech("Are you a registered user? (Enter YES or NO)")
 #     existing_user = input("Are you a registered user?(enter y or n): ")

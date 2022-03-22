@@ -227,7 +227,7 @@ class simulate_target_exercies:
         utilities().illustrate_exercise(
             "TrainerImages/push_up_illustration.jpeg", "PUSH UP'S"
         )
-        cap = cv2.VideoCapture("TrainerData/push_ups.mp4")
+        cap = cv2.VideoCapture("TrainerData/push_up_right_side.mp4")
         detector = pm.posture_detector()
         count = 0
         direction = 0
