@@ -4,6 +4,7 @@ import time
 
 import PoseModule as pm
 import os
+
 from AudioCommSys import text_to_speech
 import threading
 
@@ -215,8 +216,6 @@ class simulate_warmup:
         # Calorie calculator: Duration (in minutes)*(MET*3.5*weight in kg)/200
         calories_burned = int((time_elapsed / 60) * ((8.0 * 3.5 * 64) / 50))
 
-        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
-
 
 class simulate_target_exercies:
     def __init__(self, difficulty_level=1, reps=2):
@@ -280,8 +279,6 @@ class simulate_target_exercies:
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
 
-        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
-
     def bicep_curls(self):
         utilities().illustrate_exercise(
             "TrainerImages/bicep_curls_illustration.jpeg", "BICEP CURLS"
@@ -333,7 +330,6 @@ class simulate_target_exercies:
 
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
-        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
     def mountain_climbers(self):
         utilities().illustrate_exercise(
@@ -349,6 +345,11 @@ class simulate_target_exercies:
 
         while count < total_reps:
             success, img = cap.read()
+
+            print("----------")
+            print("----------")
+            print("file exists?", os.path.exists("TrainerData/gym_day_climbers.mov"))
+
             img = detector.find_person(img, False)
             landmark_list = detector.find_landmarks(img, False)
             is_person_facing_foward = False
@@ -388,12 +389,9 @@ class simulate_target_exercies:
                 b"--frame\r\n"
                 b"Content-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
             )
-            # cv2.imshow("Mountain Climbers", img)
-            # cv2.waitKey(1)
+
             time_elapsed = int(time.process_time() - start)
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
-
-        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
     def squats(self):
         utilities().illustrate_exercise(
@@ -403,7 +401,6 @@ class simulate_target_exercies:
         detector = pm.posture_detector()
         count = 0
         direction = 0
-        start = time.process_time()
 
         total_reps = self.reps * self.difficulty_level
 
@@ -446,9 +443,6 @@ class simulate_target_exercies:
 
             # cv2.imshow("Squats", img)
             # cv2.waitKey(1)
-            time_elapsed = int(time.process_time() - start)
-            calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
-        # return {"calories": calories_burned, "time_elapsed": time_elapsed}
 
 
 class start_workout_session:
@@ -469,15 +463,35 @@ class start_workout_session:
             seconds -= 1
             cv2.waitKey(1)
 
-    def calculate_performance(self, all_exercises):
+    def calculate_calories(self, time_elapsed, weight, gender):
         total_calories = 0
-        time_elapsed = 0
-        for exercise in all_exercises:
-            total_calories = exercise["calories"] + total_calories
-            time_elapsed = exercise["time_elapsed"] + time_elapsed
-        return {"calories": round(total_calories), "time_elapsed": time_elapsed}
+        # Met value by exercises
+        # Total calories burned = Duration (in minutes)*(MET*3.5*weight in kg)/200
+        met_value_by_exercises = {
+            "skip": 12.3,
+            "bc": 6.0,
+            "mc": 8.5,
+            "push_ups": 8.0,
+            "squats": 5.0,
+        }
+        if len(weight) != 0:
+            weight = weight_in_kg = int(weight) * 0.45359237
+        else:
+            weight_in_kg = 150
 
-    def complete_path(self):
+        print(weight)
+        print(type(weight))
+       
+
+        for ex, met_value in met_value_by_exercises.items():
+            total_calories = (met_value * 3.5) * (weight_in_kg / 200)
+
+        if gender == "Male":
+            total_calories = total_calories + (total_calories * 0.05)
+
+        return total_calories
+
+    def complete_path(self, difficulty_level, age, weight, gender):
         warm_ups = simulate_warmup(self.difficulty_level)
         target_exercises = simulate_target_exercies(self.difficulty_level)
 
@@ -487,8 +501,7 @@ class start_workout_session:
         mc_performance = target_exercises.mountain_climbers()
         pushup_performance = target_exercises.push_ups()
 
-        # overall_performance = [skipping_performance, squats_performance, bicep_curls_performance,  mc_performance, pushup_performance]
-
+        print("---------------")
         for i in mc_performance:
             yield (i)
 
@@ -504,13 +517,9 @@ class start_workout_session:
         for i in skipping_performance:
             yield (i)
 
-        # print(skipping_performance)
 
-        # return  self.calculate_performance(overall_performance)
+        # return  self.calculate_performance(overall_performance, difficulty_level, age, weight, gender)
 
-        # print("here cp")
-        # warm_ups.skip()
-        # print("xx")
         # skipping_performance = warm_ups.skip()
 
         # simulate_target_exercies.mountain_climbers()
@@ -519,7 +528,8 @@ class start_workout_session:
 
 
 def main():
-    start_workout_session().complete_path()
+    print("TODO")
+    # start_workout_session().complete_path()
 
 
 if __name__ == "__main__":

@@ -4,19 +4,24 @@ import EmailingSystem as email_sys
 import DatabaseSys as db_sys
 import AudioCommSys as audio_sys
 
+from flask_sse import sse
+
+# kill -9 $(lsof -i:8000 -t) 2> /dev/null                     
+
 from flask import Flask, render_template, Response, request
 from camera import VideoCamera
+import time
 
 app= Flask(__name__, template_folder='template')
-
-
+app.config["REDIS_URL"] = "redis://localhost"
+app.register_blueprint(sse, url_prefix='/stream')
 
 user_first_name = ""
 difficulty_level = ""
 age = ""
 weight = ""
 gender = ""
-
+calories = "0"
 
 @app.route('/trainer',  methods=['GET', 'POST'])
 def index():
@@ -24,6 +29,7 @@ def index():
     global age
     global weight
     global gender
+    # global calories
 
     user_first_name = "Chisom"
     difficulty_level = request.form['gridRadiosDifficulty']
@@ -32,8 +38,7 @@ def index():
     gender = request.form['gridRadiosGender']
 
     print(user_first_name, difficulty_level, age, weight, gender)
-    return render_template("/index.html", user_first_name = "Chisom", difficulty_level = request.form['gridRadiosDifficulty'])
-
+    return render_template("/index.html", user_first_name = "Chisom", difficulty_level = request.form['gridRadiosDifficulty'], calories = calories)
 
 @app.route('/', methods=['GET', 'POST'])
 def landing():
@@ -45,24 +50,39 @@ def gen_camera(camera):
         frame = camera.get_frame()
         yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
-@app.route('/video_feed_camera')
+@app.route('/video_feed_camera', methods=['GET', 'POST'])
 def video_feed_camera():
-    return Response( gen_camera(VideoCamera()) , mimetype='multipart/x-mixed-replace; boundary=frame')
-#  -------
+    return Response( gen_camera(VideoCamera()), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # For Test
 def gen():
     while(True):
+        
+        
         difficulty_level_map =  {"Easy": 1, "Intermediate": 2, "Hard": 3}
         level = difficulty_level_map[difficulty_level]
         print(level)
-        for i in trainer.start_workout_session(level).complete_path():
+        start = time.process_time()
+        calories = 0
+        # sse.publish({"calorie": "0"}, type='calorie')
+        for i in trainer.start_workout_session(level).complete_path(difficulty_level, age, weight, gender):
             yield i
+            print("hereee------------------------------------")
+
+            time_elapsed_for_round = int(time.process_time() - start) 
+            print(time_elapsed_for_round)
+            print(float(calories) * time_elapsed_for_round/60)
+            calories = trainer.start_workout_session(level).calculate_calories(time_elapsed_for_round, weight, gender) 
+
+            sse.publish({"calories": calories}, type='calories')
+            print(time_elapsed_for_round, calories)
+        
         # yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
     
-@app.route('/video-feed',  methods=['GET', 'POST'])
+@app.route('/video_feed')
 def video_feed():
+   
     return Response( gen() , mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
