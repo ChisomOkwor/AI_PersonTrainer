@@ -4,17 +4,19 @@
 <head>
     <script>
         window.onload = function() {
-            start()
-
+            start();
             var source = new EventSource("{{ url_for('sse.stream') }}");
+            let calorieDisplay = document.getElementById("calories");
             source.addEventListener('calorie', function(event) {
                 var data = JSON.parse(event.data);
+
                 console.log(data.calorie)
+
+                calorieDisplay.innerHTML = data.calorie;
             }, false);
             source.addEventListener('error', function(event) {
                 alert("Failed to connect to event stream. Is Redis running?");
             }, false);
-
         }
 
         function timeToString(time) {
@@ -52,17 +54,6 @@
         function pauseContinue() {
 
             alert("Take a quick breather...");
-
-            // var elem = document.getElementById("pauseContinueButton");
-            // var elemText = document.getElementById("pauseContinueText");
-            // if (elem.value == "Go!") {
-            //     elem.value = "Pause";
-            //     // elemText.innerHTML = "Take a quick breather...";
-            // } else {
-            //     alert("Take a quick breather...");
-            //     elem.value = "Go!";
-            //     // elemText.innerHTML = "You Got This!";
-            // }
         }
     </script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -82,14 +73,14 @@
             </div>
             <div class="col">
                 <h4 style="color:rgb(85, 85, 85);"> Active Calories 🔥: </h4>
-                <h3 style="color:rgb(85, 85, 85);">
-                    {{ calories }} </h5>
+                <h3 style="color:rgb(85, 85, 85);" id="calories">
+                    </h5>
             </div>
             <div class="col">
                 <h4 style="color:rgb(249, 101, 101); text-align: center;  background-color:rgb(247, 246, 246);" id="pauseContinueText"> </h4>
             </div>
             <div class="col">
-                <h4 style="color:rgb(85, 85, 85);">Clock ⏰ </h4>
+                <h4 style="color:rgb(85, 85, 85);">Time Elapsed ⏰ </h4>
                 <h3 style="color:rgb(34, 34, 34);" class="time" id="display">00:00:00</h3>
                 <div class="controls">
                 </div>

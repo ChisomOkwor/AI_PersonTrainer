@@ -3,9 +3,9 @@ import datetime
 import json
 import random
 
-CLIENT_ID = "2mqgdwm0vnb7bdo80uab694zz"
-CLIENT_SECRET = "4irtoegqcyyebmgusookkhytv"
-ACCESS_TOKEN = "tlXhjFFpY8scgooEeu6qoO2p9koVgj"
+CLIENT_ID = "4fuchrmzeziiislkk2qycdn3s"
+CLIENT_SECRET = "eoga66nhwp6jpw18xwmzi7oos"
+ACCESS_TOKEN = "nu3aJrGWc3641Gr7vZsLvoTxwJaz2X"
 
 nylas = APIClient(
     CLIENT_ID,
@@ -23,12 +23,12 @@ def email_user(email, name, calories, time):
     time_mins = str(time // 60) + " mins"
     time_secs_mins = time_mins + ", and  "  + time_secs
 
-    funny_img1 = "/Users/chisom/Desktop/AIproject/TrainerImages/great_job2.jpeg"
-    funny_img2 = "/Users/chisom/Desktop/AIproject/TrainerImages/you_rock.jpeg"
+    funny_img1 = "TrainerImages/great_job2.jpeg"
+    funny_img2 = "TrainerImages/you_rock.jpeg"
     funny_images = [funny_img1, funny_img2]
     random_img = random.randint(0, 2)
     
-    attachment = open(funny_images[random_img], 'rb')
+    attachment = open(funny_images[1], 'rb')
     file = nylas.files.create()
     file.filename = 'complete1.jpg'
     file.stream = attachment

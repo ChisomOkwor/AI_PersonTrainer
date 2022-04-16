@@ -6,15 +6,17 @@ import AudioCommSys as audio_sys
 
 from flask_sse import sse
 
-# kill -9 $(lsof -i:8000 -t) 2> /dev/null                     
+# kill -9 $(lsof -i:8000 -t) 2> /dev/null
+# gunicorn sse:app --worker-class gevent --bind 127.0.0.1:8000
 
-from flask import Flask, render_template, Response, request
+from flask import Flask, render_template, Response, request, redirect, url_for
 from camera import VideoCamera
 import time
 
-app= Flask(__name__, template_folder='template')
+
+app = Flask(__name__, static_folder='static', template_folder="template")
 app.config["REDIS_URL"] = "redis://localhost"
-app.register_blueprint(sse, url_prefix='/stream')
+app.register_blueprint(sse, url_prefix="/stream")
 
 user_first_name = ""
 difficulty_level = ""
@@ -22,8 +24,10 @@ age = ""
 weight = ""
 gender = ""
 calories = "0"
+user_email = ""
 
-@app.route('/trainer',  methods=['GET', 'POST'])
+
+@app.route("/trainer", methods=["GET", "POST"])
 def index():
     global difficulty_level
     global age
@@ -32,58 +36,95 @@ def index():
     # global calories
 
     user_first_name = "Chisom"
-    difficulty_level = request.form['gridRadiosDifficulty']
-    age = request.form['gridRadiosAge']
-    weight = request.form['numberInputWeight']
-    gender = request.form['gridRadiosGender']
+    difficulty_level = request.form["gridRadiosDifficulty"]
+    age = request.form["gridRadiosAge"]
+    weight = request.form["numberInputWeight"]
+    gender = request.form["gridRadiosGender"]
 
     print(user_first_name, difficulty_level, age, weight, gender)
-    return render_template("/index.html", user_first_name = "Chisom", difficulty_level = request.form['gridRadiosDifficulty'], calories = calories)
+    return render_template(
+        "/index.html",
+        user_first_name=user_first_name,
+        difficulty_level=request.form["gridRadiosDifficulty"],
+        calories=calories,
+        user_email=user_email,
 
-@app.route('/', methods=['GET', 'POST'])
-def landing():
-    return render_template("/landing.html")
+    )
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    return render_template("/home.html")
+
+@app.route("/preferencepage", methods=["GET", "POST"])
+def set_up():
+    if request.method=='POST':
+        global user_first_name
+        global user_email
+    
+        user_first_name = request.form["name"]
+        email = request.form["email"]
+        print(user_first_name, email)
+        # return redirect(url_for('home'))
+    return render_template("preference.html")  
+
 
 # For real world.
 def gen_camera(camera):
-    while(True):
+    while True:
         frame = camera.get_frame()
-        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n")
 
-@app.route('/video_feed_camera', methods=['GET', 'POST'])
+
+@app.route("/video_feed_camera", methods=["GET", "POST"])
 def video_feed_camera():
-    return Response( gen_camera(VideoCamera()), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(
+        gen_camera(VideoCamera()), mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
 
 # For Test
 def gen():
-    while(True):
-        
-        
-        difficulty_level_map =  {"Easy": 1, "Intermediate": 2, "Hard": 3}
+    calories = 0
+    start = time.process_time()
+    time_elapsed_for_round = 0
+
+    for i in range(0, 5):
+        difficulty_level_map = {"Easy": 1, "Intermediate": 2, "Hard": 3}
         level = difficulty_level_map[difficulty_level]
         print(level)
-        start = time.process_time()
-        calories = 0
-        # sse.publish({"calorie": "0"}, type='calorie')
-        for i in trainer.start_workout_session(level).complete_path(difficulty_level, age, weight, gender):
+
+        for i in trainer.start_workout_session(level).complete_path(
+            difficulty_level, age, weight, gender
+        ):
             yield i
-            print("hereee------------------------------------")
+            print("hereee ------------------------------------")
 
-            time_elapsed_for_round = int(time.process_time() - start) 
+            time_elapsed_for_round = int(time.process_time() - start)
             print(time_elapsed_for_round)
-            print(float(calories) * time_elapsed_for_round/60)
-            calories = trainer.start_workout_session(level).calculate_calories(time_elapsed_for_round, weight, gender) 
+            calories = trainer.start_workout_session(level).calculate_calories(
+                time_elapsed_for_round, weight, gender
+            )
 
-            sse.publish({"calories": calories}, type='calories')
+            with app.app_context():
+                sse.publish(
+                    {"calorie": round(calories / 2, 2), "time": time_elapsed_for_round},
+                    type="calorie",
+                )
             print(time_elapsed_for_round, calories)
-        
-        # yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
+        print("DONE!")
     
-@app.route('/video_feed')
+    for i in  trainer.start_workout_session().completion_screen("TrainerImages/you_rock.jpeg"):
+        yield i
+        audio_sys.text_to_speech(
+                "Workout complete! You will recieve your stats in your email! You, did it."
+            )
+        break
+    email_sys.email_user(
+            "chiggyokwor@gmail.com", "Chisom Okwor", str(round(calories / 2, 2)), time_elapsed_for_round
+        )
+
+@app.route("/video_feed")
 def video_feed():
-   
-    return Response( gen() , mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 # -----------
@@ -108,10 +149,8 @@ def video_feed():
 #     if "ready" in ready:
 #         session = trainer.start_workout_session(difficulty_level)
 #         performance = session.complete_path()
-#         session.completion_screen("/Users/chisom/Desktop/AIproject/TrainerImages/you_rock.jpeg")
-#         audio_sys.text_to_speech("Workout complete! You will recieve your stats in your email! You, did it.")
-#         email_sys.email_user(user_email, first_name , str(performance["calories"]), performance["time_elapsed"])  
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port='5000', debug=True)
+    app.run(host="0.0.0.0", port="5000", debug=True)
     # main()

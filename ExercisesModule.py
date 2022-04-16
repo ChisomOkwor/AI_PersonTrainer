@@ -14,11 +14,13 @@ from camera import VideoCamera
 
 
 class utilities:
+    list_threads = []
+
     def __init__(self) -> None:
         pass
 
     def illustrate_exercise(self, example, exercise):
-        seconds = 3
+        seconds = 4
         img = cv2.imread(example)
         img = cv2.resize(img, (980, 550))
 
@@ -40,6 +42,7 @@ class utilities:
                 target=text_to_speech, args=(str(int(seconds))), kwargs={}
             )
             speaker_thread.start()
+            speaker_thread.join()
             cv2.putText(
                 img,
                 exercise + " in: " + str(int(seconds)),
@@ -51,6 +54,8 @@ class utilities:
             )
 
             ret, jpeg = cv2.imencode(".jpg", img)
+
+            print("yielding or naaaaaaa")
             yield (
                 b"--frame\r\n"
                 b"Content-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
@@ -62,6 +67,7 @@ class utilities:
         # cv2.destroyAllWindows()
 
     def repitition_counter(self, per, count, direction):
+        list_threads = []
         if per == 100 and direction == 0:
             count += 0.5
             direction = 1
@@ -73,7 +79,13 @@ class utilities:
                 speaker_thread = threading.Thread(
                     target=text_to_speech, args=(str(int(count))), kwargs={}
                 )
+                list_threads.append(speaker_thread)
                 speaker_thread.start()
+                # speaker_thread.join()
+
+            # for t in list_threads:
+            #     t.join()
+
         return {"count": count, "direction": direction}
 
     def display_rep_count(self, img, count, total_reps):
@@ -157,15 +169,18 @@ class simulate_warmup:
         self.calories_burned = calories_burned
 
     def skip(self):
-        utilities().illustrate_exercise(
+        for i in utilities().illustrate_exercise(
             "TrainerImages/skip_illustration.jpeg", "Warm Up"
-        )
+        ):
+            yield (i)
+
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         cap = cv2.VideoCapture("TrainerData/woman_skipping.mp4")
         detector = pm.posture_detector()
         count = 0
         direction = 0
         start = time.process_time()
-        total_reps = self.reps * self.difficulty_level * 3
+        total_reps = self.reps * self.difficulty_level * 2
 
         while count < total_reps:
 
@@ -223,9 +238,11 @@ class simulate_target_exercies:
         self.difficulty_level = difficulty_level
 
     def push_ups(self):
-        utilities().illustrate_exercise(
+        for i in utilities().illustrate_exercise(
             "TrainerImages/push_up_illustration.jpeg", "PUSH UP'S"
-        )
+        ):
+            yield (i)
+        
         cap = cv2.VideoCapture("TrainerData/push_up_right_side.mp4")
         detector = pm.posture_detector()
         count = 0
@@ -280,9 +297,13 @@ class simulate_target_exercies:
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
 
     def bicep_curls(self):
-        utilities().illustrate_exercise(
+        for i in utilities().illustrate_exercise(
             "TrainerImages/bicep_curls_illustration.jpeg", "BICEP CURLS"
-        )
+        ):
+            yield (i)
+        
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
         cap = cv2.VideoCapture("TrainerData/bicep_curls.mov")
         detector = pm.posture_detector()
         count = 0
@@ -332,9 +353,11 @@ class simulate_target_exercies:
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
 
     def mountain_climbers(self):
-        utilities().illustrate_exercise(
+        for i in utilities().illustrate_exercise(
             "TrainerImages/mountain_climber_illustraion.jpeg", "MOUNTAIN CLIMBERS"
-        )
+        ):
+            yield (i)
+        
         cap = cv2.VideoCapture("TrainerData/gym_day_climbers.mov")
         detector = pm.posture_detector()
         count = 0
@@ -394,9 +417,11 @@ class simulate_target_exercies:
             calories_burned = (time_elapsed / 60) * ((4.0 * 3.5 * 64) / 200)
 
     def squats(self):
-        utilities().illustrate_exercise(
+        for i in utilities().illustrate_exercise(
             "TrainerImages/squats_illustration.jpeg", "SQUATS"
-        )
+        ):
+            yield (i)
+        
         cap = cv2.VideoCapture("TrainerData/gym_day_squats.mov")
         detector = pm.posture_detector()
         count = 0
@@ -450,18 +475,27 @@ class start_workout_session:
         self.difficulty_level = difficulty_level
 
     def completion_screen(self, congrats_img):
-        seconds = 3
-        while seconds >= 0:
-            img = cv2.imread(congrats_img)
-            img = cv2.resize(img, (980, 550))
-            yield (
-                b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + img + b"\r\n\r\n"
-            )
+        img = cv2.imread(congrats_img)
+        ret, jpeg = cv2.imencode(".jpg", img)
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n\r\n"
+        )
+        time.sleep(4)
 
-            # cv2.imshow("Image", img)
-            time.sleep(1)
-            seconds -= 1
-            cv2.waitKey(1)
+        # seconds = 3
+        # while seconds >= 0:
+        #     img = cv2.imread(congrats_img)
+        #     img = cv2.resize(img, (980, 550))
+        #     ret, jpeg = cv2.imencode(".jpg", img)
+        #     yield (
+        #         b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + + b"\r\n\r\n"
+        #     )
+
+        #     # cv2.imshow("Image", img)
+        #     time.sleep(1)
+        #     seconds -= 1
+        # cv2.waitKey(1)
 
     def calculate_calories(self, time_elapsed, weight, gender):
         total_calories = 0
@@ -481,13 +515,16 @@ class start_workout_session:
 
         print(weight)
         print(type(weight))
-       
 
         for ex, met_value in met_value_by_exercises.items():
-            total_calories = (met_value * 3.5) * (weight_in_kg / 200)
+            total_calories = float(
+                (met_value * 3.5) * (weight_in_kg / 200) * (time_elapsed / 60)
+            )
 
         if gender == "Male":
-            total_calories = total_calories + (total_calories * 0.05)
+            total_calories = float(
+                total_calories + (total_calories * 0.05) * (time_elapsed / 60)
+            )
 
         return total_calories
 
@@ -502,13 +539,13 @@ class start_workout_session:
         pushup_performance = target_exercises.push_ups()
 
         print("---------------")
+        for i in bicep_curls_performance:
+            yield (i)
+
         for i in mc_performance:
             yield (i)
 
         for i in pushup_performance:
-            yield (i)
-
-        for i in bicep_curls_performance:
             yield (i)
 
         for i in squats_performance:
@@ -516,7 +553,6 @@ class start_workout_session:
 
         for i in skipping_performance:
             yield (i)
-
 
         # return  self.calculate_performance(overall_performance, difficulty_level, age, weight, gender)
 
