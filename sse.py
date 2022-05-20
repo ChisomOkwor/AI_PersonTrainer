@@ -119,7 +119,7 @@ def gen():
             )
         break
     email_sys.email_user(
-            "chiggyokwor@gmail.com", "Chisom Okwor", str(round(calories / 2, 2)), time_elapsed_for_round
+            "okwor@gmail.com", "Chisom Okwor", str(round(calories / 2, 2)), time_elapsed_for_round
         )
 
 @app.route("/video_feed")
