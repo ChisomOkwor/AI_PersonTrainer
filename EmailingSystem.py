@@ -3,9 +3,9 @@ import datetime
 import json
 import random
 
-CLIENT_ID = "4fuchrmzeziiislkk2qycdn3s"
-CLIENT_SECRET = "eoga66nhwp6jpw18xwmzi7oos"
-ACCESS_TOKEN = "nu3aJrGWc3641Gr7vZsLvoTxwJaz2X"
+CLIENT_ID = ""
+CLIENT_SECRET = ""
+ACCESS_TOKEN = ""
 
 nylas = APIClient(
     CLIENT_ID,
